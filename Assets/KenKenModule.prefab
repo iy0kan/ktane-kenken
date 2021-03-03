@@ -699,7 +699,7 @@ MonoBehaviour:
   clearButton: {fileID: 114624599487795102}
   submitButton: {fileID: 114275200373239882}
   background: {fileID: 1773677951345360}
-  cell: {fileID: 1239776440627566, guid: 2f8e78054d02ff74a8a8a462a2d0bef3, type: 2}
+  cell: {fileID: 1740900695587344, guid: 2f8e78054d02ff74a8a8a462a2d0bef3, type: 2}
 --- !u!114 &114217424074650730
 MonoBehaviour:
   m_ObjectHideFlags: 1

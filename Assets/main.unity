@@ -202,12 +202,12 @@ Prefab:
     - target: {fileID: 114848120511536268, guid: 8814ea52310d2614a9feda02ec355ae4,
         type: 2}
       propertyPath: FrontFaceOnly
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114848120511536268, guid: 8814ea52310d2614a9feda02ec355ae4,
         type: 2}
       propertyPath: BombSize
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1692417196144518, guid: 8814ea52310d2614a9feda02ec355ae4, type: 2}
       propertyPath: m_IsActive

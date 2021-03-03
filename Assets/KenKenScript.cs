@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using KModkit;
 
@@ -15,10 +16,11 @@ public class KenKenScript : MonoBehaviour {
 
 	[Header("Board")]
 	public GameObject background;
-	private const int BOARD_SIZE = 4;
+	public const int BOARD_SIZE = 4;
 	public GameObject cell;
 
 	private Cell[,] cells;
+	private byte[,] soln;
 
 	// for logging
 	private static int NEXT_ID = 1;
@@ -35,7 +37,13 @@ public class KenKenScript : MonoBehaviour {
 		};
 		submitButton.OnInteract += OnSubmit;
 
+		this.soln = MakeSoln();
 		DrawBoard();
+		for(int i=0; i<BOARD_SIZE; i++) {
+			for(int j=0; j<BOARD_SIZE; j++) {
+				this.cells[i,j].SetText(this.soln[i,j].ToString());
+			}
+		}
 	}
 
 	void Log(string str) {
@@ -57,12 +65,14 @@ public class KenKenScript : MonoBehaviour {
 		yield return null;
 	}
 
-	float lerp(float lo, float hi, int i, int max) {
+	float Lerp(float lo, float hi, int i, int max) {
 		float n = i / (float)(max-1);
 		return (1-n)*lo + n*hi;
 	}
 
 	void DrawBoard() {
+		var me = this.GetComponent<KMSelectable>();
+		List<KMSelectable> children = me.Children.ToList();
 		Vector3 padding =
 			(Vector3.one - this.cell.transform.localScale*BOARD_SIZE) / (BOARD_SIZE + 1);
 		padding.y = 0f;
@@ -73,16 +83,41 @@ public class KenKenScript : MonoBehaviour {
 			for(int j=0; j<BOARD_SIZE; j++) {
 				GameObject cell = Instantiate(this.cell, this.background.transform);
 				cell.transform.localPosition = new Vector3(
-					lerp(min.x, max.x, i, BOARD_SIZE),
-					max.y + 0.001f,
-					lerp(min.z, max.z, j, BOARD_SIZE)
+					Lerp(min.x, max.x, i, BOARD_SIZE),
+					max.y + 0.01f,
+					Lerp(min.z, max.z, j, BOARD_SIZE)
 				);
+				var sel = cell.GetComponent<KMSelectable>();
+				children.Add(sel);
+				sel.Parent = me;
 				cells[i,j] = cell.GetComponent<Cell>();
-				cells[i,j].SetText("256×");
-				cells[i,j].textRenderer.enabled = false;
 				cells[i,j].Audio = this.Audio;
 			}
 		}
+		me.Children = children.ToArray();
+		me.UpdateChildren();
+	}
+
+	byte[,] MakeSoln() {
+		var range = Enumerable.Range(0, BOARD_SIZE);
+		HashSet<byte>[] left = range.Select(_ => {
+			var h = new HashSet<byte>();
+			for(byte i=0; i<BOARD_SIZE; i++) h.Add(i);
+			return h;
+		}).ToArray();
+		var soln = new byte[BOARD_SIZE,BOARD_SIZE];
+		for(int i=0; i<BOARD_SIZE-1; i++) {
+			byte[] vs = range.Select(x => (byte)x).ToArray();
+			do vs.Shuffle();
+			while(vs.Select((v, j) => left[j].Contains(v)).Any(x => !x));
+			for(int j=0; j<BOARD_SIZE; j++) {
+				left[j].Remove(vs[j]);
+				soln[i,j] = (byte)(vs[j] + 1);
+			}
+		}
+		for(int i=BOARD_SIZE-1, j=0; j<BOARD_SIZE; j++)
+			soln[i,j] = (byte)(left[j].First() + 1);
+		return soln;
 	}
 
 	IEnumerator DoClear() {

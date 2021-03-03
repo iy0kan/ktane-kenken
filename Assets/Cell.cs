@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Cell : MonoBehaviour {
-	public Nullable<byte> Value = null;
+	public byte? Value = null;
 
 	[Header("KTaNE Boilerplate")]
-	public KMSelectable Me;
 	public KMAudio Audio;
 
 	[Header("Label in corner")]
@@ -18,7 +17,7 @@ public class Cell : MonoBehaviour {
 	public TextMesh number;
 
 	public void Awake() {
-		Me.OnInteract += OnClick;
+		this.GetComponent<KMSelectable>().OnInteract += OnClick;
 	}
 
 	public void SetText(string text) {
@@ -26,7 +25,6 @@ public class Cell : MonoBehaviour {
 	}
 
 	public void Clear() {
-		this.textRenderer.enabled = true;
 		this.Value = null;
 		RedrawButton();
 	}
@@ -36,10 +34,14 @@ public class Cell : MonoBehaviour {
 			KMSoundOverride.SoundEffect.ButtonPress,
 			this.transform
 		);
+		this.Value = this.Value == null ? 1 :
+			(byte?)((this.Value % KenKenScript.BOARD_SIZE) + 1);
+		RedrawButton();
 		return false;
 	}
 
 	void RedrawButton() {
+		this.textRenderer.enabled = this.Value == null;
 		this.number.text = this.Value == null ? "" : this.Value.ToString();
 	}
 }
