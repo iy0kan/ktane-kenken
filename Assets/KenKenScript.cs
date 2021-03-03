@@ -133,7 +133,18 @@ public class KenKenScript : MonoBehaviour {
 	}
 
 	bool OnSubmit() {
-		Module.HandlePass();
+		if(CheckAnswer())
+			Module.HandlePass();
+		else
+			Module.HandleStrike();
 		return false;
+	}
+
+	bool CheckAnswer() {
+		for(int i=0; i<BOARD_SIZE; i++)
+			for(int j=0; j<BOARD_SIZE; j++)
+				if(this.cells[i,j].Value != this.soln[i,j])
+					return false;
+		return true;
 	}
 }
