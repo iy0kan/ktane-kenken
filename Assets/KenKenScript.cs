@@ -23,11 +23,11 @@ public class KenKenScript : MonoBehaviour {
 	private byte[,] soln;
 
 	// for logging
-	private static int NEXT_ID = 1;
+	private static int _next_id = 1;
 	private int id;
 
 	void Awake() {
-		this.id = NEXT_ID++;
+		this.id = _next_id++;
 
 		AddButtonBehavior(clearButton);
 		AddButtonBehavior(submitButton);
