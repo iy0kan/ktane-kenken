@@ -14,9 +14,8 @@ public class KenKenScript : MonoBehaviour {
 	public KMSelectable submitButton;
 
 	[Header("Board")]
-	public Renderer bounds;
+	public GameObject background;
 	private const int BOARD_SIZE = 4;
-	[Range(0f, 0.01f)] public float margin = 0.008f;
 	public GameObject cell;
 
 	private Cell[,] cells;
@@ -39,15 +38,14 @@ public class KenKenScript : MonoBehaviour {
 		DrawBoard();
 	}
 
-	void Log(string str) {
+	void Log(string str) =>
 		Debug.LogFormat(@"[KenKen {0}] {1}", this.id, str);
-	}
 
 	void AddButtonBehavior(KMSelectable btn) {
 		btn.OnInteract += delegate() {
 			StartCoroutine(ButtonPressAnimation(btn.transform));
 			Audio.PlayGameSoundAtTransform(
-				KMSoundOverride.SoundEffect.ButtonPress,
+				KMSoundOverride.SoundEffect.BigButtonPress,
 				this.transform
 			);
 			return false;
@@ -58,15 +56,45 @@ public class KenKenScript : MonoBehaviour {
 		yield return null;
 	}
 
+	float lerp(float lo, float hi, int i, int max) {
+		float n = i / (float)(max-1);
+		return (1-n)*lo + n*hi;
+	}
+
 	void DrawBoard() {
+		Bounds cellBounds = this.cell.GetComponent<MeshRenderer>().bounds;
+		Bounds bgBounds = this.background.GetComponent<MeshRenderer>().bounds;
+		Vector3 allPadding = (bgBounds.size - cellBounds.size*BOARD_SIZE);
+		Vector3 padding = allPadding / (BOARD_SIZE + 1) + cellBounds.extents;
+		Vector3 min = bgBounds.min + padding;
+		Vector3 max = bgBounds.max - padding;
+		float y = 0.0001f + bgBounds.max.y - cellBounds.extents.y;
+		this.cells = new Cell[BOARD_SIZE,BOARD_SIZE];
+		for(int i=0; i<BOARD_SIZE; i++) {
+			for(int j=0; j<BOARD_SIZE; j++) {
+				GameObject cell = Instantiate(
+					this.cell,
+					this.background.transform,
+					true
+				);
+				cell.transform.position = new Vector3(
+					lerp(min.x, max.x, i, BOARD_SIZE),
+					y,
+					lerp(min.z, max.z, j, BOARD_SIZE)
+				);
+				cells[i,j] = cell.GetComponent<Cell>();
+				cells[i,j].SetText("256×");
+				cells[i,j].Audio = this.Audio;
+			}
+		}
 	}
 
 	IEnumerator DoClear() {
 		if(this.cells == null) yield break;
 		for(int i=0; i<2*BOARD_SIZE-1; i++) {
-			int lo = Mathf.Max(0, BOARD_SIZE-i);
-			int hi = Mathf.Min(BOARD_SIZE, i);
-			for(int j=lo; j<hi; j++) {
+			int lo = Mathf.Max(0, i-BOARD_SIZE+1);
+			int hi = Mathf.Min(BOARD_SIZE-1, i);
+			for(int j=lo; j<=hi; j++) {
 				this.cells[j, i-j].Clear();
 			}
 			yield return new WaitForSeconds(0.05f);
