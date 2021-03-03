@@ -38,8 +38,9 @@ public class KenKenScript : MonoBehaviour {
 		DrawBoard();
 	}
 
-	void Log(string str) =>
+	void Log(string str) {
 		Debug.LogFormat(@"[KenKen {0}] {1}", this.id, str);
+	}
 
 	void AddButtonBehavior(KMSelectable btn) {
 		btn.OnInteract += delegate() {
@@ -62,28 +63,23 @@ public class KenKenScript : MonoBehaviour {
 	}
 
 	void DrawBoard() {
-		Bounds cellBounds = this.cell.GetComponent<MeshRenderer>().bounds;
-		Bounds bgBounds = this.background.GetComponent<MeshRenderer>().bounds;
-		Vector3 allPadding = (bgBounds.size - cellBounds.size*BOARD_SIZE);
-		Vector3 padding = allPadding / (BOARD_SIZE + 1) + cellBounds.extents;
-		Vector3 min = bgBounds.min + padding;
-		Vector3 max = bgBounds.max - padding;
-		float y = 0.0001f + bgBounds.max.y - cellBounds.extents.y;
+		Vector3 padding =
+			(Vector3.one - this.cell.transform.localScale*BOARD_SIZE) / (BOARD_SIZE + 1);
+		padding.y = 0f;
+		Vector3 max = (Vector3.one - this.cell.transform.localScale) / 2 - padding;
+		Vector3 min = -max;
 		this.cells = new Cell[BOARD_SIZE,BOARD_SIZE];
 		for(int i=0; i<BOARD_SIZE; i++) {
 			for(int j=0; j<BOARD_SIZE; j++) {
-				GameObject cell = Instantiate(
-					this.cell,
-					this.background.transform,
-					true
-				);
-				cell.transform.position = new Vector3(
+				GameObject cell = Instantiate(this.cell, this.background.transform);
+				cell.transform.localPosition = new Vector3(
 					lerp(min.x, max.x, i, BOARD_SIZE),
-					y,
+					max.y + 0.001f,
 					lerp(min.z, max.z, j, BOARD_SIZE)
 				);
 				cells[i,j] = cell.GetComponent<Cell>();
 				cells[i,j].SetText("256×");
+				cells[i,j].textRenderer.enabled = false;
 				cells[i,j].Audio = this.Audio;
 			}
 		}
@@ -97,7 +93,7 @@ public class KenKenScript : MonoBehaviour {
 			for(int j=lo; j<=hi; j++) {
 				this.cells[j, i-j].Clear();
 			}
-			yield return new WaitForSeconds(0.05f);
+			yield return new WaitForSeconds(0.02f);
 		}
 	}
 

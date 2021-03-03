@@ -40,6 +40,6 @@ public class Cell : MonoBehaviour {
 	}
 
 	void RedrawButton() {
-		this.number.text = this.Value?.ToString() ?? "";
+		this.number.text = this.Value == null ? "" : this.Value.ToString();
 	}
 }

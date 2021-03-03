@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 4340537014602812}
   - component: {fileID: 33236881764963604}
   - component: {fileID: 23758149082479244}
+  - component: {fileID: 114828677635569538}
   m_Layer: 0
   m_Name: background
   m_TagString: Untagged
@@ -697,8 +698,7 @@ MonoBehaviour:
   Audio: {fileID: 114331556656819344}
   clearButton: {fileID: 114624599487795102}
   submitButton: {fileID: 114275200373239882}
-  bounds: {fileID: 23758149082479244}
-  margin: 0.008
+  background: {fileID: 1773677951345360}
   cell: {fileID: 1239776440627566, guid: 2f8e78054d02ff74a8a8a462a2d0bef3, type: 2}
 --- !u!114 &114217424074650730
 MonoBehaviour:
@@ -869,6 +869,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShaderNames:
   - GUI/KT 3D Text
+--- !u!114 &114828677635569538
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1773677951345360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1005838349, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShaderNames:
+  - KT/Mobile/DiffuseTint
 --- !u!114 &114967849628146996
 MonoBehaviour:
   m_ObjectHideFlags: 1
