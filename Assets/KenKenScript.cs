@@ -151,22 +151,23 @@ public class KenKenScript : MonoBehaviour {
 	Dictionary<byte, string> MakeLabels() {
 		var ret = new Dictionary<byte, string>();
 		foreach(var kvp in rule.groups) {
-			var vs = kvp.Value.Select(v2 => (int)this.soln[v2.x, v2.y]);
+			List<int> vs = kvp.Value
+				.Select(v2 => (int)this.soln[v2.x, v2.y])
+				.ToList();
+			vs.Sort();
 			var opts = new List<string> {
 				String.Format("{0}+", vs.Sum()),
-				String.Format("{0}×", vs.Aggregate((a, b) => a * b))
+				String.Format("{0}×", vs.Product())
 			};
-			switch(kvp.Value.Count) {
-				case 1:
-					opts.Add(vs.First().ToString());
-					break;
-				case 2:
-					int max = vs.Max(), min = vs.Min();
-					opts.Add(String.Format("{0}–", max - min));
-					if(max % min == 0)
-						opts.Add(String.Format("{0}÷", max / min));
-					break;
-			}
+			if(kvp.Value.Count == 1)
+				opts.Add(vs.First().ToString());
+			int max = vs[vs.Count - 1];
+			vs.RemoveAt(vs.Count - 1);
+			int rest;
+			if((rest = vs.Sum()) <= max)
+				opts.Add(String.Format("{0}-", max - rest));
+			if(max % (rest = vs.Product()) == 0)
+				opts.Add(String.Format("{0}÷", max / rest));
 			ret.Add(kvp.Key, opts[Random.Range(0, opts.Count-1)]);
 		}
 		return ret;
