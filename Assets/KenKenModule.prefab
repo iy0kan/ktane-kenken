@@ -200,6 +200,7 @@ GameObject:
   - component: {fileID: 114370199867871872}
   - component: {fileID: 114421329933604104}
   - component: {fileID: 114967849628146996}
+  - component: {fileID: 114366439268769348}
   - component: {fileID: 114167997936193144}
   m_Layer: 0
   m_Name: KenKenModule
@@ -280,7 +281,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1627705481182864}
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.0098, y: 0.0177, z: 0.0679}
+  m_LocalPosition: {x: 0.0098, y: 0.0177, z: 0.066}
   m_LocalScale: {x: 0.78151, y: 0.78150976, z: 0.78150976}
   m_Children:
   - {fileID: 4163155345250480}
@@ -340,7 +341,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1217328392051636}
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -0.0509, y: 0.0177, z: 0.0679}
+  m_LocalPosition: {x: -0.0509, y: 0.0177, z: 0.066}
   m_LocalScale: {x: 0.78151464, y: 0.7815144, z: 0.7815144}
   m_Children:
   - {fileID: 4339046256658734}
@@ -696,6 +697,7 @@ MonoBehaviour:
   Bomb: {fileID: 114370199867871872}
   Module: {fileID: 114421329933604104}
   Audio: {fileID: 114331556656819344}
+  RuleSeed: {fileID: 114366439268769348}
   clearButton: {fileID: 114624599487795102}
   submitButton: {fileID: 114275200373239882}
   background: {fileID: 1773677951345360}
@@ -809,6 +811,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HighlightScale: {x: 1, y: 1, z: 1}
   OutlineAmount: 0
+--- !u!114 &114366439268769348
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1885235157193114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adf69c2de51bd3c43bbd9bc22578ee08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _seed: 1
 --- !u!114 &114370199867871872
 MonoBehaviour:
   m_ObjectHideFlags: 1

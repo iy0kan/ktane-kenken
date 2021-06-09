@@ -31,7 +31,7 @@ public class Cell : MonoBehaviour {
 
 	bool OnClick() {
 		Audio.PlayGameSoundAtTransform(
-			KMSoundOverride.SoundEffect.ButtonPress,
+			KMSoundOverride.SoundEffect.BigButtonPress,
 			this.transform
 		);
 		this.Value = this.Value == null ? 1 :

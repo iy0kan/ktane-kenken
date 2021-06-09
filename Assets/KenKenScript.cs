@@ -1,14 +1,17 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KModkit;
+using Random = UnityEngine.Random;
 
 public class KenKenScript : MonoBehaviour {
 	[Header("KTaNE Boilerplate")]
 	public KMBombInfo Bomb;
 	public KMBombModule Module;
 	public KMAudio Audio;
+	public KMRuleSeedable RuleSeed;
 
 	[Header("Buttons")]
 	public KMSelectable clearButton;
@@ -22,6 +25,9 @@ public class KenKenScript : MonoBehaviour {
 	private Cell[,] cells;
 	private byte[,] soln;
 
+	private static GridChunks[,] rules;
+	private GridChunks rule;
+
 	// for logging
 	private static int _next_id = 1;
 	private int id;
@@ -29,32 +35,54 @@ public class KenKenScript : MonoBehaviour {
 	void Awake() {
 		this.id = _next_id++;
 
+		if(rules == null) {
+			var rng = RuleSeed.GetRNG();
+			rules = GridChunks.MakeRules(rng);
+		}
+
 		AddButtonBehavior(clearButton);
 		AddButtonBehavior(submitButton);
-		clearButton.OnInteract += delegate() {
-			StartCoroutine(DoClear());
-			return false;
-		};
+		clearButton.OnInteract += delegate() { DoClear(); return false; };
 		submitButton.OnInteract += OnSubmit;
 
-		this.soln = MakeSoln();
 		DrawBoard();
+	}
+
+	void Start() {
+		var sn = Bomb.GetSerialNumber();
+		int i = (char.IsLetter(sn[0]) ? 2 : 0) + (char.IsLetter(sn[1]) ? 1 : 0);
+		int j = Bomb.GetBatteryCount() % 3;
+		Log("Rule: {0},{1}", i, j);
+		this.rule = rules[i, j];
+		Reset();
+	}
+
+	void Reset() {
+		this.soln = MakeSoln();
+		var labels = PlaceLabels(MakeLabels());
 		for(int i=0; i<BOARD_SIZE; i++) {
 			for(int j=0; j<BOARD_SIZE; j++) {
-				this.cells[i,j].SetText(this.soln[i,j].ToString());
+				var v = new Vector2Int(i, j);
+				this.cells[i, j].SetText(
+					labels.ContainsKey(v) ? labels[v] : ""
+				);
 			}
 		}
 	}
 
-	void Log(string str) {
-		Debug.LogFormat(@"[KenKen {0}] {1}", this.id, str);
+	void Log(string str, params object[] args) {
+		Debug.LogFormat(
+			"[KenKen {0}] {1}",
+			this.id,
+			String.Format(str, args)
+		);
 	}
 
 	void AddButtonBehavior(KMSelectable btn) {
 		btn.OnInteract += delegate() {
 			StartCoroutine(ButtonPressAnimation(btn.transform));
 			Audio.PlayGameSoundAtTransform(
-				KMSoundOverride.SoundEffect.BigButtonPress,
+				KMSoundOverride.SoundEffect.ButtonPress,
 				this.transform
 			);
 			return false;
@@ -120,16 +148,44 @@ public class KenKenScript : MonoBehaviour {
 		return soln;
 	}
 
-	IEnumerator DoClear() {
-		if(this.cells == null) yield break;
-		for(int i=0; i<2*BOARD_SIZE-1; i++) {
-			int lo = Mathf.Max(0, i-BOARD_SIZE+1);
-			int hi = Mathf.Min(BOARD_SIZE-1, i);
-			for(int j=lo; j<=hi; j++) {
-				this.cells[j, i-j].Clear();
+	Dictionary<byte, string> MakeLabels() {
+		var ret = new Dictionary<byte, string>();
+		foreach(var kvp in rule.groups) {
+			var vs = kvp.Value.Select(v2 => (int)this.soln[v2.x, v2.y]);
+			var opts = new List<string> {
+				String.Format("{0}+", vs.Sum()),
+				String.Format("{0}×", vs.Aggregate((a, b) => a * b))
+			};
+			switch(kvp.Value.Count) {
+				case 1:
+					opts.Add(vs.First().ToString());
+					break;
+				case 2:
+					int max = vs.Max(), min = vs.Min();
+					opts.Add(String.Format("{0}–", max - min));
+					if(max % min == 0)
+						opts.Add(String.Format("{0}÷", max / min));
+					break;
 			}
-			yield return new WaitForSeconds(0.02f);
+			ret.Add(kvp.Key, opts[Random.Range(0, opts.Count-1)]);
 		}
+		return ret;
+	}
+
+	Dictionary<Vector2Int, string> PlaceLabels(
+		Dictionary<byte, string> labels
+	) {
+		var ret = new Dictionary<Vector2Int, String>();
+		foreach(var kvp in rule.groups) {
+			var opts = kvp.Value;
+			ret.Add(opts[Random.Range(0, opts.Count-1)], labels[kvp.Key]);
+		}
+		return ret;
+	}
+
+	void DoClear() {
+		if(this.cells == null) return;
+		foreach(var cell in this.cells) cell.Clear();
 	}
 
 	bool OnSubmit() {
