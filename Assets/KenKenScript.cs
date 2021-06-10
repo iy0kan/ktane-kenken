@@ -118,8 +118,8 @@ public class KenKenScript : MonoBehaviour {
 				var sel = cell.GetComponent<KMSelectable>();
 				children.Add(sel);
 				sel.Parent = me;
-				cells[i,j] = cell.GetComponent<Cell>();
-				cells[i,j].Audio = this.Audio;
+				cells[j,i] = cell.GetComponent<Cell>();
+				cells[j,i].Audio = this.Audio;
 			}
 		}
 		me.Children = children.ToArray();

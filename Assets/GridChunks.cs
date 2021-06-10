@@ -64,6 +64,7 @@ public class GridChunks {
 				.GroupBy(g => this.groups[g].Count)
 				.OrderBy(g => g.Key)
 				.SelectMany(gs => rng.ShuffleFisherYates(gs.ToList()))
+			    .ToArray()
 			) {
 				if(Merge(grp, v)) {
 					found = true;
