@@ -22,10 +22,7 @@ public class GridChunks {
 			for(int j=0; j<KenKenScript.BOARD_SIZE; j++) {
 				var v = new Vector2Int(i, j);
 				this.map[v] = c;
-				if(this.groups.ContainsKey(c))
-					this.groups[c].Add(v);
-				else
-					this.groups[c] = new List<Vector2Int>() { v };
+				this.groups[c] = new List<Vector2Int>() { v };
 				c++;
 			}
 		}
@@ -41,9 +38,9 @@ public class GridChunks {
 
 	// impure: rng
 	public static GridChunks[,] MakeRules(MonoRandom rng) {
-		var ret = new GridChunks[4, 4];
+		var ret = new GridChunks[4, 3];
 		for(int i=0; i<4; i++) {
-			for(int j=0; j<4; j++) {
+			for(int j=0; j<3; j++) {
 				ret[i,j] = (new GridChunks()).MakeBoard(rng);
 			}
 		}
@@ -65,6 +62,7 @@ public class GridChunks {
 			bool found = false;
 			foreach(var grp in neighbors
 				.GroupBy(g => this.groups[g].Count)
+			    .OrderBy(g => g.Key)
 				.SelectMany(gs => rng.ShuffleFisherYates(gs.ToList()))
 			) {
 				if(Merge(grp, v)) {
@@ -85,7 +83,6 @@ public class GridChunks {
 			if(!this.map.ContainsKey(loc_)) continue;
 			var grp = this.map[loc_];
 			if(grp == thisGrp) continue;
-			var size = this.groups[grp].Count;
 			oks.Add(grp);
 		}
 		return oks;

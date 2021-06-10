@@ -3,152 +3,355 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="utf-8">
-    <title>Module Name — Keep Talking and Nobody Explodes Module</title>
+    <title>KenKen — Keep Talking and Nobody Explodes Module</title>
     <meta name="viewport" content="initial-scale=1">
     <link rel="stylesheet" type="text/css" href="css/normalize.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/font.css">
+    <style>
+        .cages tr td {
+            padding: 1em;
+        }
+
+        .cage {
+            border: 4px solid;
+        }
+
+        .cage tr td {
+            width: 2em;
+            height: 2em;
+            padding: 0;
+        }
+
+        .center-text {
+            text-align: center;
+        }
+    </style>
     <script src="js/ktane-utils.js"></script>
+    <script src="js/ruleseed.js"></script>
+    <script>
+        const BOARD_SIZE = 4;
+        Set.prototype.getIdx = function(i) {
+            for(
+                let iter = this.keys(), next = iter.next();
+                !next.done;
+                next = iter.next(), i--
+            )
+                if(i === 0) return next.value;
+
+        };
+
+        class GridChunks {
+            constructor() {
+                this.map = new Map();
+                this.groups = new Map();
+                for(let c=0, i=0; i<BOARD_SIZE; i++)
+                    for(let j=0; j<BOARD_SIZE; j++, c++) {
+                        let v = `${i},${j}`;
+                        this.map.set(v, c);
+                        this.groups.set(c, [v]);
+                    }
+                this.curOnes = BOARD_SIZE * BOARD_SIZE;
+            }
+
+            adjacents(loc) {
+                let [x, y] = loc.split(',').map(n => Number(n));
+                return [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
+                    .map(xs => xs.join(','));
+            }
+
+            findNeighbors(loc, thisGrp) {
+                let rv = new Set();
+                for(let loc_ of this.adjacents(loc)) {
+                    if(!this.map.has(loc_)) continue;
+                    let grp = this.map.get(loc_);
+                    if(grp == thisGrp) continue;
+                    rv.add(grp);
+                }
+                return rv;
+            }
+
+            makeBoard(rng) {
+                this.ones = rng.nextMax(3);
+                this.threes = rng.nextMax(2) + 1;
+                this.fours = Math.floor(rng.nextDouble() * 2.05);
+                let oks = new Set(this.map.keys());
+                while(oks.size > 0) {
+                    let k, v = this.map.get(k = oks.getIdx(rng.nextMax(oks.size)));
+                    if(this.groups.get(v).length >= 4) { oks.delete(k); continue; }
+                    let neighbors = this.findNeighbors(k, v);
+                    if(neighbors.size === 0) { oks.delete(k); continue; }
+
+                    // groupBy(g => groups[g].size)
+                    let groupedBySize = new Map();
+                    neighbors.forEach(n => {
+                        let sz = this.groups.get(n).length;
+                        if(!groupedBySize.has(sz)) groupedBySize.set(sz, []);
+                        groupedBySize.get(sz).push(n)
+                    });
+                    // orderBy(g => g.key)
+                    let orderedBySize = [];
+                    [...groupedBySize.keys()]
+                        .sort((a, b) => a - b)
+                        .forEach(k => orderedBySize.push(groupedBySize.get(k)));
+                    // selectMany(gs => shuffleFisherYates(gs))
+                    orderedBySize = orderedBySize
+                        .flatMap(gs => rng.shuffleFisherYates(gs));
+                    let found = false;
+                    for(let grp of orderedBySize)
+                        if(this.merge(grp, v)) {
+                            found = true;
+                            break;
+                        }
+                    if(!found) oks.delete(k);
+                }
+            }
+
+            go(rng) {
+                this.makeBoard(rng);
+                return this.map;
+            }
+
+            merge(src, dest) {
+                if(this.curOnes <= this.ones) return false;
+                let dc = this.groups.get(dest).length;
+                let sc = this.groups.get(src).length;
+                if(sc + dc > 4) return false;
+                if(sc + dc == 4 && this.fours <= 0) return false;
+                if(sc + dc == 3 && this.threes <= 0) return false;
+
+                if(dc == 1) this.curOnes--;
+                if(sc == 1) this.curOnes--;
+
+                this.groups.set(
+                    dest,
+                    this.groups.get(dest).concat(this.groups.get(src))
+                );
+                this.groups.get(src).forEach(v => this.map.set(v, dest));
+                dc = this.groups.get(dest).length;
+                if(dc == 4) this.fours--;
+                if(dc == 3) this.threes--;
+                this.groups.delete(src);
+                return true;
+            }
+
+            drawOnto(el) {
+                el = el.children[0];
+                for(let i=0; i<BOARD_SIZE; i++) {
+                    let row = el.children[BOARD_SIZE-i-1];
+                    for(let j=0; j<BOARD_SIZE; j++) {
+                        let cell = row.children[j];
+                        let here = this.map.get(`${i},${j}`);
+                        let down = `${i-1},${j}`, right = `${i},${j-1}`;
+                        if(i >= 1 && here !== this.map.get(down))
+                            cell.style.borderBottom = "4px solid black";
+                        if(j >= 1 && here !== this.map.get(right))
+                            cell.style.borderLeft = "4px solid black";
+                    }
+                }
+            }
+        }
+
+        setDefaultRules = setRules = rng => {
+            for(let i=0; i<4; i++) {
+                for(let j=0; j<3; j++) {
+                    let el = document.getElementById(`cage-${i}-${j}`);
+                    let gc = new GridChunks();
+                    gc.go(rng);
+                    gc.drawOnto(el);
+                }
+            }
+        };
+    </script>
 </head>
 <body>
     <div class="section">
         <div class="page page-bg-01">
             <div class="page-header">
                 <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
-                <span class="page-header-section-title">Module Name</span>
+                <span class="page-header-section-title">KenKen</span>
             </div>
             <div class="page-content">
                 <img src="img/Component/Module Name.svg" class="diagram">
-                <h2>On the Subject of Module Name</h2>
-                <p class="flavour-text">Your flavor text should go here.</p>
+                <h2>On the Subject of KenKen</h2>
+                <p class="flavour-text">The module that makes you smarter!</p>
 
-                <p>Here are templates for commonly used manual features. Make sure to always use closing tags (the ones with a <code>/</code> in them).</p>
-
-                <h3>Bullet Points (Unordered Lists)</h3>
-                <ul>
-                    <li>Bullet points should use the <code>&lt;ul&gt;&lt;/ul&gt;</code> and <code>&lt;li&gt;&lt;/li&gt;</code> tags.</li>
-                    <li>
-                        You can even have nested bullet points:
-                        <ul>
-                            <li>Indented</li>
-                            <li>Bullet Points</li>
-                        </ul>
-                    </li>
-                    <li>
-                        Or numbered lists:
-                        <ol>
-                            <li>Indented</li>
-                            <li>Bullet Points</li>
-                        </ol>
-                    </li>
-                </ul>
-
-                <h3>Numbered Lists (Ordered Lists)</h3>
-                <ol>
-                    <li>Numbered lists should use the <code>&lt;ol&gt;&lt;/ol&gt;</code> and <code>&lt;li&gt;&lt;/li&gt;</code> tags.</li>
-                    <li>Nested lists work just like unordered lists (see above).</li>
-                </ol>
-
-                <h3>Text</h3>
-                <p>Use paragraph tags (<code>&lt;p&gt;&lt;/p&gt;</code>) for text blocks. In addition, for text formatting, use:</p>
-                <ul>
-                    <li>
-                        <strong>Bold</strong>: <code>&lt;strong&gt;&lt;/strong&gt;</code> (HTML) or <code>font-weight: bold;</code> (CSS).
-                        <ul><li>Bold in table headers should be achieved through the use of the <code>&lt;th&gt;&lt;/th&gt;</code> tag.</li></ul>
-                    </li>
-                    <li><em>Underline</em>: <code>&lt;em&gt;&lt;/em&gt;</code> (HTML) or <code>text-decoration: underline;</code> (CSS).</li>
-                    <li>Line<br />Break: <code>&lt;br /&gt;</code> (HTML)</li>
-                </ul>
-                <p>For the most part, HTML versions of bolding and underlining is recommended. Note that italics are not used in vanilla manuals besides flavor text and references to appendices, and therefore is not included above. Also, here are some sample headings:</p>
-                <h3>Example Big Heading</h3>
-                <h4>Example Small Heading</h4>
+                <p>
+                    The module generates a 4&times;4 KenKen puzzle, with a
+                    number and mathematical operator in the corner of some
+                    cells. Clicking any square will cycle the number shown,
+                    starting at 1; pressing the &ldquo;clear&rdquo; button will
+                    remove the numbers from all cells; pressing the
+                    &ldquo;submit&rdquo; button will disarm the module if all
+                    cells contain the correct numbers, and
+                    strike otherwise.
+                </p>
+                <p>
+                    A KenKen puzzle consists of an n&times;n grid of numbers,
+                    grouped into &ldquo;cages&rdquo; indicated by bolded lines.
+                </p>
+                <p>
+                    A KenKen puzzle is considered solved when no row or column
+                    contains the same number twice, and the mathematical
+                    operator in all cages something something.
+                </p>
             </div>
             <div class="page-footer relative-footer">Page 1 of 3</div>
         </div>
         <div class="page page-bg-02">
             <div class="page-header">
                 <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
-                <span class="page-header-section-title">Module Name</span>
+                <span class="page-header-section-title">KenKen</span>
             </div>
             <div class="page-content">
-                <h3>Example Tables</h3>
-                <table>
+                <h3>Cage locations</h3>
+                <table class="cages">
                     <tr>
-                        <th>Part of table</th>
-                        <th>How to make</th>
+                        <td rowspan="2">S#</td>
+                        <td colspan="3" class="center-text">Battery count</th>
                     </tr>
                     <tr>
-                        <th>Rows and Columns</th>
+                        <th>0, 3, 6, ...</th>
+                        <th>1, 4, 7, ...</th>
+                        <th>2, 5, 8, ...</th>
+                    </tr>
+                    <tr>
+                        <th>##</th>
                         <td>
-                            Use <code>&lt;tr&gt;&lt;/tr&gt;</code> for rows.
-                            Use <code>&lt;th&gt;&lt;/th&gt;</code> or <code>&lt;td&gt;&lt;/td&gt;</code> for columns within rows (see below).
+                            <table class="cage" id="cage-0-0">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-0-1">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-0-2">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
                         </td>
                     </tr>
                     <tr>
-                        <th>Headings (left column and top row, in most cases)</th>
-                        <td>Use <code>&lt;th&gt;&lt;/th&gt;</code></td>
+                        <th>#X</th>
+                        <td>
+                            <table class="cage" id="cage-1-0">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-1-1">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-1-2">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
                     </tr>
                     <tr>
-                        <th>Cells</th>
-                        <td>Use <code>&lt;td&gt;&lt;/td&gt;</code></td>
+                        <th>X#</th>
+                        <td>
+                            <table class="cage" id="cage-2-0">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-2-1">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-2-2">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
                     </tr>
                     <tr>
-                        <th rowspan="2">Merged Cells</th>
-                        <td>Use <code>rowspan="_"</code> for merging cells vertically.</td>
-                    </tr>
-                    <tr>
-                        <td>Use <code>colspan="_"</code> for merging cells horizontally.</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">Note that merged cells created in other rows are skipped in affected rows (see HTML for above row).</td>
+                        <th>XX</th>
+                        <td>
+                            <table class="cage" id="cage-3-0">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-3-1">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
+                        <td>
+                            <table class="cage" id="cage-3-2">
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                                <tr><td /><td /><td /><td /></tr>
+                            </table>
+                        </td>
                     </tr>
                 </table>
-                <p>If the table contents are not wide enough, tables are centered by default due to the <code>table</code> rule of the first <code>&lt;style&gt;</code> block (see above code).</p>
-                <table class="center">
-                    <tr>
-                        <th>Cell 1</th>
-                        <td>Cell 2</td>
-                    </tr>
-                    <tr>
-                        <th>Cell 3</th>
-                        <td>Cell 4</td>
-                    </tr>
-                </table>
-
-                <h3>Images</h3>
-                <p>Use the <code>&lt;img src="_" /&gt;</code> tag for images. Make sure to put your images into the <code class="notcode">/img/[Module Name]/</code> folder. Adjust the width with CSS, using <code>width: _%;</code> (recommended) or <code>width: _px;</code>. Example:</p>
-                <img style='width: 100%' src="img/Example Image.png" />
-
-                <h3>Making the PDF</h3>
-                <p>To make a PDF version of your manual, open the HTML file in Google Chrome and open the "Print" dialog (Usually <kbd>CTRL</kbd>+<kbd>P</kbd>) and choose "Save as PDF" as the destination.</p>
             </div>
             <div class="page-footer relative-footer">Page 2 of 3</div>
         </div>
-        <div class="page page-bg-03">
-            <div class="page-header">
-                <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
-                <span class="page-header-section-title">Appendix Name</span>
-            </div>
-            <div class="page-content">
-                <h2>Appendix M: Additional Notes</h2>
-                <p>Here other things to keep in mind when making a manual page:</p>
-                <ul>
-                    <li><strong>There are comments <code>/* ... */</code> in the CSS code in the <code>&lt;style&gt;</code> blocks containing instructions. Follow those instructions before finishing your manual.</strong></li>
-                    <li>Normal and Needy module manual pages are formatted similarly. Widget manual pages are appendices and are formatted as such.</li>
-                    <li>Each manual or appendix page should have a <code>&lt;div class="page-footer...</code> at the bottom of the page, updated accordingly.</li>
-                    <li>Don't be afraid to ask for help if needed!</li>
-                    <li>
-                        A few things to reiterate:
-                        <ul>
-                            <li>Make sure to never forget closing tags (the ones with a <code>/</code> in them).</li>
-                            <li>For the most part, HTML versions of bolding and underlining is recommended.</li>
-                            <li>Italics are not used in vanilla manuals besides flavor text and references to appendices, and therefore is not included above. </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-            <div class="page-footer relative-footer">Page 3 of 3</div>
-        </div>
+        <!-- <div class="page page-bg-03">
+             <div class="page-header">
+             <span class="page-header-doc-title">Keep Talking and Nobody Explodes Mod</span>
+             <span class="page-header-section-title">Appendix Name</span>
+             </div>
+             <div class="page-content">
+             <h2>Appendix M: Additional Notes</h2>
+             <p>Here other things to keep in mind when making a manual page:</p>
+             <ul>
+             <li><strong>There are comments <code>/* ... */</code> in the CSS code in the <code>&lt;style&gt;</code> blocks containing instructions. Follow those instructions before finishing your manual.</strong></li>
+             <li>Normal and Needy module manual pages are formatted similarly. Widget manual pages are appendices and are formatted as such.</li>
+             <li>Each manual or appendix page should have a <code>&lt;div class="page-footer...</code> at the bottom of the page, updated accordingly.</li>
+             <li>Don't be afraid to ask for help if needed!</li>
+             <li>
+             A few things to reiterate:
+             <ul>
+             <li>Make sure to never forget closing tags (the ones with a <code>/</code> in them).</li>
+             <li>For the most part, HTML versions of bolding and underlining is recommended.</li>
+             <li>Italics are not used in vanilla manuals besides flavor text and references to appendices, and therefore is not included above. </li>
+             </ul>
+             </li>
+             </ul>
+             </div>
+             <div class="page-footer relative-footer">Page 3 of 3</div>
+             </div> -->
     </div>
 </body>
 </html>
