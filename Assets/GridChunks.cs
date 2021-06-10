@@ -51,7 +51,7 @@ public class GridChunks {
 	private GridChunks MakeBoard(MonoRandom rng) {
 		ones = rng.Next(3);
 		threes = rng.Next(2) + 1;
-		fours = (int)(rng.NextDouble() * 2.05); // 2x4 case should be rare
+		fours = (int)(rng.NextDouble() * 2.2); // 2x4 case should be rare
 		var oks = new HashSet<Vector2Int>(this.map.Keys);
 		while(oks.Count > 0) {
 			var k = oks.ElementAt(rng.Next(oks.Count));
