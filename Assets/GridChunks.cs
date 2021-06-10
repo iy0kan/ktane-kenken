@@ -62,7 +62,7 @@ public class GridChunks {
 			bool found = false;
 			foreach(var grp in neighbors
 				.GroupBy(g => this.groups[g].Count)
-			    .OrderBy(g => g.Key)
+				.OrderBy(g => g.Key)
 				.SelectMany(gs => rng.ShuffleFisherYates(gs.ToList()))
 			) {
 				if(Merge(grp, v)) {
