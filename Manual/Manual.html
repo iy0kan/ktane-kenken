@@ -107,11 +107,6 @@
                 }
             }
 
-            go(rng) {
-                this.makeBoard(rng);
-                return this.map;
-            }
-
             merge(src, dest) {
                 if(this.curOnes <= this.ones) return false;
                 let dc = this.groups.get(dest).length;
@@ -157,7 +152,7 @@
                 for(let j=0; j<3; j++) {
                     let el = document.getElementById(`cage-${i}-${j}`);
                     let gc = new GridChunks();
-                    gc.go(rng);
+                    gc.makeBoard(rng);
                     gc.drawOnto(el);
                 }
             }
